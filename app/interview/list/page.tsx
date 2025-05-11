@@ -12,13 +12,8 @@ export default async function InterviewListPage() {
     redirect("/login")
   }
 
+  // 获取所有面试记录，不进行筛选
   const interviews = await prisma.interview.findMany({
-    where: {
-      OR: [
-        { interviewerId: session.user.id },
-        { intervieweeId: session.user.id },
-      ],
-    },
     include: {
       interviewer: {
         select: { name: true },

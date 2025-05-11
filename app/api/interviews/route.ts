@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(req: Request) {
   try {
-    const { intervieweeId, suggestedTime } = await req.json()
+    const { intervieweeId, suggestedTime, interviewerId, type } = await req.json()
 
     if (!intervieweeId) {
       return NextResponse.json(
@@ -15,9 +15,15 @@ export async function POST(req: Request) {
     // 创建面试请求
     const interview = await prisma.interview.create({
       data: {
-        intervieweeId,
+        type: type || "模拟面试",
         status: 'PENDING',
-        suggestedTime: suggestedTime || null,
+        scheduledAt: suggestedTime || null,
+        interviewee: {
+          connect: { id: intervieweeId }
+        },
+        interviewer: {
+          connect: { id: interviewerId }
+        }
       },
     })
 

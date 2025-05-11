@@ -1,4 +1,3 @@
-import { ScheduleForm } from "@/components/interview/schedule-form"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { PrismaClient } from "@prisma/client"

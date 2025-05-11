@@ -12,12 +12,8 @@ export async function MatchingList() {
     redirect("/login")
   }
 
+  // 获取所有潜在匹配用户，不进行筛选
   const matches = await prisma.user.findMany({
-    where: {
-      NOT: {
-        id: session.user.id,
-      },
-    },
     select: {
       id: true,
       name: true,
