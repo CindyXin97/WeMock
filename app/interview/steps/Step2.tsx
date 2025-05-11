@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai'
 import { interviewFormAtom } from '../atoms'
-import { Button } from '../../components/ui/button'
+import { Button } from '@/components/ui/button'
 
 const roles = [
   { label: '数据科学家DS', value: 'DS' },

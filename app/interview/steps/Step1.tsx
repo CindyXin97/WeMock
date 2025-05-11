@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai'
 import { interviewFormAtom } from '../atoms'
-import { Button } from '../../components/ui/button'
+import { Button } from '@/components/ui/button'
 
 const types = [
   { label: '结构化面试', value: 'structured' },

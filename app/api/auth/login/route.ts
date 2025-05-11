@@ -1,67 +1,59 @@
 import { NextResponse } from 'next/server'
-import { compare } from 'bcryptjs'
-import { prisma } from '@/lib/prisma'
-import { sign } from 'jsonwebtoken'
+import { cookies } from 'next/headers'
+import { SignJWT } from 'jose'
 
-export async function POST(req: Request) {
+// 从 register 中获取用户存储
+// @ts-ignore 开发环境临时方案
+const userStore: Record<string, any> = global.userStore || {};
+// @ts-ignore 开发环境临时方案
+if (!global.userStore) global.userStore = userStore;
+
+export async function POST(request: Request) {
   try {
-    const { email, password } = await req.json()
+    const body = await request.json()
+    const { username, password } = body
 
-    // 验证必填字段
-    if (!email || !password) {
+    // 简单示例：仅检查用户名和密码是否为非空
+    if (!username || !password) {
       return NextResponse.json(
-        { error: '请填写所有必填字段' },
+        { error: '用户名和密码不能为空' },
         { status: 400 }
       )
     }
 
-    // 查找用户
-    const user = await prisma.user.findUnique({
-      where: { email },
-    })
+    // 实际项目中，这里应该从数据库查询用户并验证密码
+    // 这里简化为只要提供任何非空用户名和密码就通过
+    
+    console.log('User logged in:', { username })
 
-    if (!user) {
-      return NextResponse.json(
-        { error: '用户不存在' },
-        { status: 401 }
-      )
-    }
+    // 创建JWT令牌 - 使用jose库
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key')
+    const token = await new SignJWT({ userId: '1', username })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('1d')
+      .sign(secret)
 
-    // 验证密码
-    const isValidPassword = await compare(password, user.password!)
+    console.log('Token created successfully')
 
-    if (!isValidPassword) {
-      return NextResponse.json(
-        { error: '密码错误' },
-        { status: 401 }
-      )
-    }
-
-    // 生成 JWT token
-    const token = sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '7d' }
-    )
-
-    // 设置 cookie
-    const response = NextResponse.json(
-      { message: '登录成功', user: { id: user.id, email: user.email } },
-      { status: 200 }
-    )
-
-    response.cookies.set('token', token, {
+    // 创建响应对象
+    const response = NextResponse.json({ success: true })
+    
+    // 设置cookie到响应中
+    response.cookies.set({
+      name: 'token',
+      value: token,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: 60 * 60 * 24, // 1天
+      path: '/',
     })
 
     return response
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(
-      { error: '登录失败，请稍后重试' },
+      { error: '服务器错误，请稍后重试' },
       { status: 500 }
     )
   }

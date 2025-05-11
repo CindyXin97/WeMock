@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 
@@ -14,24 +13,25 @@ export function LoginForm() {
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    const email = formData.get("email") as string
+    const username = formData.get("email") as string
     const password = formData.get("password") as string
 
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
       })
 
-      if (result?.error) {
-        setError(result.error)
-        return
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "登录失败，请稍后重试")
       }
 
+      // 登录成功后直接跳转到匹配页面
       router.push("/matching")
     } catch (error) {
-      setError("登录失败，请稍后重试")
+      setError(error instanceof Error ? error.message : "登录失败，请稍后重试")
     } finally {
       setLoading(false)
     }
