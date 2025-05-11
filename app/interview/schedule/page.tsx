@@ -4,7 +4,12 @@ import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
-export default function SchedulePage() {
+export default async function SchedulePage() {
+  const session = await getServerSession()
+  if (!session?.user) {
+    redirect("/login")
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">

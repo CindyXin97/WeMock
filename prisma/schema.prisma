@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String      @id @default(uuid())
+  name           String?
+  email          String?     @unique
+  emailVerified  DateTime?   @map("email_verified")
+  image          String?
+  targetRole     String?     @map("target_role")
+  workExperience String?     @map("work_experience")
+  practiceAreas  String[]    @map("practice_areas")
+  targetIndustry String?     @map("target_industry")
+  targetCompany  String?     @map("target_company")
+  availableTime  Json?       @map("available_time")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  
+  // Relations
+  interviewsAsInterviewer Interview[] @relation("InterviewerRelation")
+  interviewsAsInterviewee Interview[] @relation("IntervieweeRelation")
+
+  @@map("users")
+}
+
+model Interview {
+  id          String    @id @default(uuid())
+  type        String
+  status      String
+  scheduledAt DateTime? @map("scheduled_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  // Relations
+  interviewer   User   @relation("InterviewerRelation", fields: [interviewerId], references: [id])
+  interviewerId String @map("interviewer_id")
+  
+  interviewee   User   @relation("IntervieweeRelation", fields: [intervieweeId], references: [id])
+  intervieweeId String @map("interviewee_id")
+
+  @@map("interviews")
+} 
