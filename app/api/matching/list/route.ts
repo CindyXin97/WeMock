@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 // 计算匹配度
 function calculateMatchScore(user1: any, user2: any): number {
@@ -41,7 +39,7 @@ export async function GET(request: Request) {
   try {
     // 这里应该从session或token中获取当前用户ID
     // 暂时使用硬编码的测试用户ID
-    const currentUserId = "test-user-id"
+    const currentUserId = 1 // 使用整数ID
 
     const currentUser = await prisma.user.findUnique({
       where: { id: currentUserId },
@@ -64,6 +62,7 @@ export async function GET(request: Request) {
     // 计算匹配度并排序
     const usersWithScores = otherUsers.map(user => ({
       ...user,
+      displayName: user.nickname || user.username, // 使用nickname或username作为显示名称
       matchScore: calculateMatchScore(currentUser, user),
     }))
 

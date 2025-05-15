@@ -22,15 +22,11 @@ export async function POST(req: Request) {
     // 创建面试请求
     const interview = await prisma.interview.create({
       data: {
-        type,
-        status: 'PENDING',
-        scheduledAt: suggestedTime || null,
-        interviewer: {
-          connect: { id: interviewerId }
-        },
-        interviewee: {
-          connect: { id: intervieweeId }
-        }
+        interview_type: type,
+        status: 'pending',
+        scheduled_time: suggestedTime || null,
+        interviewerId: parseInt(interviewerId),
+        intervieweeId: parseInt(intervieweeId)
       },
     })
 

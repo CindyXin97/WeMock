@@ -1,10 +1,8 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
 import { format } from "date-fns"
 import { zhCN } from "date-fns/locale"
-
-const prisma = new PrismaClient()
 
 export default async function InterviewListPage() {
   const session = await getServerSession()
@@ -15,17 +13,31 @@ export default async function InterviewListPage() {
   try {
     // 获取所有面试记录
     const interviews = await prisma.interview.findMany({
-      include: {
-        interviewer: {
-          select: { name: true },
-        },
-        interviewee: {
-          select: { name: true },
-        },
-      },
       orderBy: {
-        scheduledAt: "desc",
+        scheduled_time: "desc",
       },
+    })
+
+    // 获取所有用户以便查找面试官和候选人信息
+    const userIdSet = new Set<number>()
+    interviews.forEach(interview => {
+      userIdSet.add(interview.interviewerId)
+      userIdSet.add(interview.intervieweeId)
+    })
+    const userIds = Array.from(userIdSet)
+    
+    const users = await prisma.user.findMany({
+      where: {
+        id: {
+          in: userIds
+        }
+      }
+    })
+
+    // 创建用户ID到用户信息的映射
+    const userMap = new Map<number, any>()
+    users.forEach(user => {
+      userMap.set(user.id, user)
     })
 
     return (
@@ -42,41 +54,46 @@ export default async function InterviewListPage() {
           ) : (
             <div className="bg-white shadow overflow-hidden sm:rounded-md">
               <ul className="divide-y divide-gray-200">
-                {interviews.map((interview) => (
-                  <li key={interview.id}>
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <p className="text-sm font-medium text-blue-600 truncate">
-                            {interview.type}
-                          </p>
-                          <p className="ml-2 flex-shrink-0 inline-block px-2.5 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                            {interview.status}
-                          </p>
+                {interviews.map((interview: any) => {
+                  const interviewer = userMap.get(interview.interviewerId) || {}
+                  const interviewee = userMap.get(interview.intervieweeId) || {}
+                  
+                  return (
+                    <li key={interview.id}>
+                      <div className="px-4 py-4 sm:px-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <p className="text-sm font-medium text-blue-600 truncate">
+                              {interview.interview_type}
+                            </p>
+                            <p className="ml-2 flex-shrink-0 inline-block px-2.5 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                              {interview.status}
+                            </p>
+                          </div>
+                          <div className="ml-2 flex-shrink-0 flex">
+                            <p className="text-sm text-gray-500">
+                              {interview.scheduled_time 
+                                ? format(new Date(interview.scheduled_time), "PPP p", {
+                                    locale: zhCN,
+                                  })
+                                : "未安排时间"}
+                            </p>
+                          </div>
                         </div>
-                        <div className="ml-2 flex-shrink-0 flex">
-                          <p className="text-sm text-gray-500">
-                            {interview.scheduledAt 
-                              ? format(new Date(interview.scheduledAt), "PPP p", {
-                                  locale: zhCN,
-                                })
-                              : "未安排时间"}
-                          </p>
+                        <div className="mt-2 sm:flex sm:justify-between">
+                          <div className="sm:flex">
+                            <p className="flex items-center text-sm text-gray-500">
+                              面试官：{interviewer.nickname || interviewer.username || "未命名"}
+                            </p>
+                            <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                              候选人：{interviewee.nickname || interviewee.username || "未命名"}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex">
-                          <p className="flex items-center text-sm text-gray-500">
-                            面试官：{interview.interviewer.name || "未命名"}
-                          </p>
-                          <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
-                            候选人：{interview.interviewee.name || "未命名"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           )}

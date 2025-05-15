@@ -1,10 +1,8 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-
-const prisma = new PrismaClient()
 
 export async function MatchingList() {
   const session = await getServerSession()
@@ -17,7 +15,8 @@ export async function MatchingList() {
     const matches = await prisma.user.findMany({
       select: {
         id: true,
-        name: true,
+        username: true,
+        nickname: true,
         targetRole: true,
         workExperience: true,
         practiceAreas: true,
@@ -40,7 +39,7 @@ export async function MatchingList() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <p className="text-sm font-medium text-blue-600 truncate">
-                        {match.name || '未命名用户'}
+                        {match.nickname || match.username || '未命名用户'}
                       </p>
                       <p className="ml-2 flex-shrink-0 inline-block px-2.5 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
                         {match.targetRole || '无目标角色'}

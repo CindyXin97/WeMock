@@ -6,7 +6,8 @@ export async function GET() {
     const users = await prisma.user.findMany({
       select: {
         id: true,
-        name: true,
+        username: true,
+        nickname: true,
         targetRole: true,
         workExperience: true,
         practiceAreas: true,
@@ -15,7 +16,13 @@ export async function GET() {
       },
     })
 
-    return NextResponse.json(users)
+    // Add a displayName property for frontend convenience
+    const usersWithDisplayName = users.map(user => ({
+      ...user,
+      displayName: user.nickname || user.username
+    }))
+
+    return NextResponse.json(usersWithDisplayName)
   } catch (error) {
     console.error('Error fetching matches:', error)
     return NextResponse.json(
