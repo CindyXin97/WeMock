@@ -4,6 +4,32 @@ import { prisma } from "@/lib/prisma"
 import { format } from "date-fns"
 import { zhCN } from "date-fns/locale"
 
+// 定义面试记录的类型，匹配Prisma模型
+type Interview = {
+  id: number;
+  match_id: number | null;
+  interviewerId: number;
+  intervieweeId: number;
+  interview_type: string | null;
+  status: string | null;
+  scheduled_time: Date | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+// 定义用户类型
+type User = {
+  id: number;
+  username: string;
+  nickname: string | null;
+}
+
+// 定义空用户对象类型
+type EmptyUser = {
+  username?: string;
+  nickname?: string | null;
+}
+
 export default async function InterviewListPage() {
   const session = await getServerSession()
   if (!session?.user) {
@@ -35,10 +61,16 @@ export default async function InterviewListPage() {
     })
 
     // 创建用户ID到用户信息的映射
-    const userMap = new Map<number, any>()
+    const userMap = new Map<number, User>()
     users.forEach(user => {
       userMap.set(user.id, user)
     })
+
+    // 创建默认的空用户对象
+    const emptyUser: EmptyUser = {
+      username: "未命名",
+      nickname: null
+    }
 
     return (
       <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -54,9 +86,9 @@ export default async function InterviewListPage() {
           ) : (
             <div className="bg-white shadow overflow-hidden sm:rounded-md">
               <ul className="divide-y divide-gray-200">
-                {interviews.map((interview: any) => {
-                  const interviewer = userMap.get(interview.interviewerId) || {}
-                  const interviewee = userMap.get(interview.intervieweeId) || {}
+                {interviews.map((interview) => {
+                  const interviewer = userMap.get(interview.interviewerId) || emptyUser
+                  const interviewee = userMap.get(interview.intervieweeId) || emptyUser
                   
                   return (
                     <li key={interview.id}>
@@ -64,10 +96,10 @@ export default async function InterviewListPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
                             <p className="text-sm font-medium text-blue-600 truncate">
-                              {interview.interview_type}
+                              {interview.interview_type || "未指定类型"}
                             </p>
                             <p className="ml-2 flex-shrink-0 inline-block px-2.5 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                              {interview.status}
+                              {interview.status || "未知状态"}
                             </p>
                           </div>
                           <div className="ml-2 flex-shrink-0 flex">

@@ -14,6 +14,7 @@ interface User {
   targetIndustry: string
   targetCompany: string
   matchScore?: number
+  displayName?: string
 }
 
 interface Filters {
@@ -21,6 +22,18 @@ interface Filters {
   workExperience: string
   practiceArea: string
   targetIndustry: string
+}
+
+interface ApiUser {
+  id: string
+  username: string
+  nickname: string | null
+  targetRole: string | null
+  workExperience: string | null
+  practiceAreas: string[]
+  targetIndustry: string | null
+  targetCompany: string | null
+  displayName: string
 }
 
 export default function MatchesPage() {
@@ -42,9 +55,10 @@ export default function MatchesPage() {
         const response = await fetch('/api/matches')
         if (response.ok) {
           const data = await response.json()
-          const usersWithScores = data.map((user: User) => ({
+          const usersWithScores = data.map((user: ApiUser) => ({
             ...user,
-            matchScore: calculateMatchScore(user, filters)
+            name: user.displayName || user.username,
+            matchScore: calculateMatchScore(user as unknown as User, filters)
           }))
           setUsers(usersWithScores.sort((a: User, b: User) => (b.matchScore || 0) - (a.matchScore || 0)))
         }
@@ -184,14 +198,14 @@ export default function MatchesPage() {
 
       {/* 匹配列表 */}
       <div className="space-y-4">
-        {users.map((user) => (
+        {users.map((user: User) => (
           <div key={user.id} className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-semibold">{user.name}</h3>
                 <p className="text-gray-600">{user.targetRole} | {user.workExperience}年经验</p>
                 <div className="mt-2">
-                  {user.practiceAreas.map((area) => (
+                  {user.practiceAreas.map((area: string) => (
                     <span
                       key={area}
                       className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm mr-2 mb-2"

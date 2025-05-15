@@ -4,6 +4,18 @@ import { prisma } from "@/lib/prisma"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
+// 定义匹配用户的类型
+type MatchUser = {
+  id: number;
+  username: string;
+  nickname: string | null;
+  targetRole: string | null;
+  workExperience: string | null;
+  practiceAreas: string[];
+  targetIndustry: string | null;
+  targetCompany: string | null;
+}
+
 export async function MatchingList() {
   const session = await getServerSession()
   if (!session?.user) {
@@ -33,7 +45,7 @@ export async function MatchingList() {
               暂无匹配用户
             </li>
           ) : (
-            matches.map((match) => (
+            matches.map((match: MatchUser) => (
               <li key={match.id}>
                 <div className="px-4 py-4 sm:px-6">
                   <div className="flex items-center justify-between">
