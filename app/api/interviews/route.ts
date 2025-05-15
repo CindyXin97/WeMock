@@ -54,7 +54,7 @@ export async function GET(req: Request) {
 
     // 手动获取相关用户信息
     const enhancedInterviews = await Promise.all(
-      interviews.map(async (interview) => {
+      interviews.map(async (interview: typeof interviews[number]) => {
         const interviewer = await prisma.user.findUnique({
           where: { id: interview.interviewerId },
           select: {
