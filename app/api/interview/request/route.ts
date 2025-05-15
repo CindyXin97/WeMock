@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
 import { z } from "zod"
-
-const prisma = new PrismaClient()
+import prisma from "@/lib/prisma"
 
 const requestSchema = z.object({
   userId: z.string(),
