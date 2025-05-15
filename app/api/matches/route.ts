@@ -17,7 +17,16 @@ export async function GET() {
     })
 
     // Add a displayName property for frontend convenience
-    const usersWithDisplayName = users.map(user => ({
+    const usersWithDisplayName = users.map((user: {
+      id: number;
+      username: string;
+      nickname: string | null;
+      targetRole: string | null;
+      workExperience: string | null;
+      practiceAreas: string[];
+      targetIndustry: string | null;
+      targetCompany: string | null;
+    }) => ({
       ...user,
       displayName: user.nickname || user.username
     }))
