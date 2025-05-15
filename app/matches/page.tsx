@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { TimePickerDialog } from '@/components/interview/time-picker-dialog'
+import { useToast } from '@/hooks/use-toast'
 
 interface User {
   id: string
@@ -38,6 +39,7 @@ interface ApiUser {
 
 export default function MatchesPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<Filters>({
@@ -116,11 +118,25 @@ export default function MatchesPage() {
           suggestedTime: time,
         }),
       })
+
+      const data = await response.json()
+      
       if (response.ok) {
-        alert('面试请求已发送！')
+        toast({
+          title: '成功',
+          description: data.message || '面试请求已发送！',
+          variant: 'default',
+        })
+      } else {
+        throw new Error(data.error || '发送面试请求失败')
       }
     } catch (error) {
       console.error('Error requesting interview:', error)
+      toast({
+        title: '请求失败',
+        description: error instanceof Error ? error.message : '发送面试请求失败，请重试',
+        variant: 'destructive',
+      })
     }
   }
 

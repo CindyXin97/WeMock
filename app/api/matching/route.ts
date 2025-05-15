@@ -46,7 +46,7 @@ export async function GET(req: Request) {
     const token = tokenCookie.split('=')[1]
     
     // 验证 token
-    const decoded = verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: number, username: string }
+    const decoded = verify(token, process.env.JWT_SECRET || 'your-secret-key') as { id: number, username: string }
     
     // 获取当前用户信息
     const currentUser = await query<User>(
@@ -57,7 +57,7 @@ export async function GET(req: Request) {
         practice_areas as "practiceAreas"
       FROM users 
       WHERE id = $1`,
-      [decoded.userId]
+      [decoded.id]
     )
     
     if (currentUser.length === 0) {
@@ -81,7 +81,7 @@ export async function GET(req: Request) {
         available_times as "availableTimes"
       FROM users 
       WHERE id <> $1`,
-      [decoded.userId]
+      [decoded.id]
     )
     
     // 计算匹配度

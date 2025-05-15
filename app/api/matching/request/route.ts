@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     const token = tokenCookie.split('=')[1]
     
     // 验证 token
-    const decoded = verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: number, username: string }
+    const decoded = verify(token, process.env.JWT_SECRET || 'your-secret-key') as { id: number, username: string }
     
     // 获取请求体
     const { targetUserId } = await req.json()
@@ -45,9 +45,9 @@ export async function POST(req: Request) {
       SELECT id, status 
       FROM matches 
       WHERE 
-        (user_id_1 = ${decoded.userId} AND user_id_2 = ${targetUserId})
+        (user_id_1 = ${decoded.id} AND user_id_2 = ${targetUserId})
         OR
-        (user_id_1 = ${targetUserId} AND user_id_2 = ${decoded.userId})
+        (user_id_1 = ${targetUserId} AND user_id_2 = ${decoded.id})
     `
     
     if (existingMatches.length > 0) {
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
         work_experience as "workExperience", 
         practice_areas as "practiceAreas"
       FROM users 
-      WHERE id = ${decoded.userId}
+      WHERE id = ${decoded.id}
     `
     
     // 获取目标用户信息
@@ -138,7 +138,9 @@ export async function POST(req: Request) {
     }
     
     // 练习内容匹配
-    if (targetUserData.practiceAreas && currentUserData.practiceAreas) {
+    if (targetUserData.practiceAreas && currentUserData.practiceAreas && 
+        Array.isArray(targetUserData.practiceAreas) && targetUserData.practiceAreas.length > 0 &&
+        Array.isArray(currentUserData.practiceAreas) && currentUserData.practiceAreas.length > 0) {
       const commonAreas = targetUserData.practiceAreas.filter((area: string) => 
         currentUserData.practiceAreas.includes(area)
       )
@@ -159,7 +161,7 @@ export async function POST(req: Request) {
         status
       )
       VALUES (
-        ${decoded.userId}, 
+        ${decoded.id}, 
         ${targetUserId}, 
         ${matchScore}, 
         'pending'
