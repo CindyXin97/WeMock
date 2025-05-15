@@ -1,8 +1,20 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
+// Define user type for better type safety
+type User = {
+  id: number;
+  username: string;
+  nickname: string | null;
+  targetRole: string | null;
+  workExperience: string | null;
+  practiceAreas: string[];
+  targetIndustry: string | null;
+  targetCompany: string | null;
+}
+
 // 计算匹配度
-function calculateMatchScore(user1: any, user2: any): number {
+function calculateMatchScore(user1: User, user2: User): number {
   let score = 0
   const maxScore = 100
 
@@ -60,10 +72,10 @@ export async function GET(request: Request) {
     })
 
     // 计算匹配度并排序
-    const usersWithScores = otherUsers.map(user => ({
+    const usersWithScores = otherUsers.map((user: User) => ({
       ...user,
       displayName: user.nickname || user.username, // 使用nickname或username作为显示名称
-      matchScore: calculateMatchScore(currentUser, user),
+      matchScore: calculateMatchScore(currentUser as User, user),
     }))
 
     // 按匹配度降序排序
