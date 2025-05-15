@@ -13,6 +13,12 @@ type User = {
   targetCompany: string | null;
 }
 
+// Define type for user with match score
+type UserWithScore = User & {
+  displayName: string;
+  matchScore: number;
+}
+
 // 计算匹配度
 function calculateMatchScore(user1: User, user2: User): number {
   let score = 0
@@ -79,7 +85,7 @@ export async function GET(request: Request) {
     }))
 
     // 按匹配度降序排序
-    usersWithScores.sort((a, b) => b.matchScore - a.matchScore)
+    usersWithScores.sort((a: UserWithScore, b: UserWithScore) => b.matchScore - a.matchScore)
 
     return NextResponse.json({
       users: usersWithScores,
