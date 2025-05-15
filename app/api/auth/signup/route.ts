@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { sql } from '@/lib/db'
 
+// 标记为动态路由，防止静态生成导致的headers错误
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()

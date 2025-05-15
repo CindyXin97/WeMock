@@ -2,6 +2,27 @@ import { NextResponse } from 'next/server'
 import { verify } from 'jsonwebtoken'
 import { query } from '@/lib/database'
 
+// 标记为动态路由，防止静态生成导致的headers错误
+export const dynamic = 'force-dynamic';
+
+// 定义用户类型
+interface User {
+  id: number;
+  username: string;
+  nickname: string | null;
+  targetRole: string | null;
+  workExperience: string | null;
+  practiceAreas: string[];
+  targetIndustry: string | null;
+  targetCompany: string | null;
+  availableTimes?: string[];
+}
+
+// 带匹配分数的用户类型
+interface UserWithScore extends User {
+  matchScore: number;
+}
+
 export async function GET(req: Request) {
   try {
     // 获取 cookie 中的 token
@@ -25,10 +46,10 @@ export async function GET(req: Request) {
     const token = tokenCookie.split('=')[1]
     
     // 验证 token
-    const decoded = verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: number, username: string }
+    const decoded = verify(token, process.env.JWT_SECRET || 'your-secret-key') as { id: number, username: string }
     
     // 获取当前用户信息
-    const currentUser = await query<any>(
+    const currentUser = await query<User>(
       `SELECT 
         id, 
         target_role as "targetRole", 
@@ -36,7 +57,7 @@ export async function GET(req: Request) {
         practice_areas as "practiceAreas"
       FROM users 
       WHERE id = $1`,
-      [decoded.userId]
+      [decoded.id]
     )
     
     if (currentUser.length === 0) {
@@ -47,7 +68,7 @@ export async function GET(req: Request) {
     }
     
     // 获取所有可匹配的用户（排除自己）
-    const users = await query<any>(
+    const users = await query<User>(
       `SELECT 
         id, 
         username, 
@@ -60,11 +81,11 @@ export async function GET(req: Request) {
         available_times as "availableTimes"
       FROM users 
       WHERE id <> $1`,
-      [decoded.userId]
+      [decoded.id]
     )
     
     // 计算匹配度
-    const usersWithScore = users.map((user: any) => {
+    const usersWithScore = users.map((user: User): UserWithScore => {
       // 简单的匹配算法
       let score = 0
       const currentUserData = currentUser[0]
@@ -117,7 +138,7 @@ export async function GET(req: Request) {
     })
     
     // 按匹配度降序排序
-    usersWithScore.sort((a: any, b: any) => b.matchScore - a.matchScore)
+    usersWithScore.sort((a: UserWithScore, b: UserWithScore) => b.matchScore - a.matchScore)
     
     return NextResponse.json({
       users: usersWithScore

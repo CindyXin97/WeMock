@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 
 interface UserProfile {
   id: number
@@ -107,20 +107,24 @@ export default function MatchingPage() {
         body: JSON.stringify({ targetUserId: userId }),
       })
       
+      const data = await response.json()
+      
       if (!response.ok) {
-        throw new Error('发送匹配请求失败')
+        throw new Error(data.error || '发送匹配请求失败')
       }
       
+      // 显示API返回的消息
       toast({
-        title: "请求已发送",
-        description: "匹配请求已成功发送！",
+        title: data.message ? "成功" : "请求已发送",
+        description: data.message || "匹配请求已成功发送！",
+        variant: "default",
       })
     } catch (error) {
       console.error('匹配请求错误:', error)
       toast({
         variant: "destructive",
         title: "请求失败",
-        description: "发送匹配请求失败，请重试",
+        description: error instanceof Error ? error.message : "发送匹配请求失败，请重试",
       })
     }
   }
@@ -278,7 +282,7 @@ export default function MatchingPage() {
                           {user.nickname || user.username}
                         </div>
                         <Badge variant="secondary" className="px-3 py-1 text-blue-700">
-                          匹配度: {user.matchScore || '80'}%
+                          匹配度: {user.matchScore !== undefined ? `${user.matchScore}` : '80'}%
                         </Badge>
                       </div>
                     </div>

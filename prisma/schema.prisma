@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,41 +8,54 @@ datasource db {
 }
 
 model User {
-  id             String      @id @default(uuid())
-  name           String?
-  email          String?     @unique
-  emailVerified  DateTime?   @map("email_verified")
-  image          String?
-  targetRole     String?     @map("target_role")
-  workExperience String?     @map("work_experience")
-  practiceAreas  String[]    @map("practice_areas")
-  targetIndustry String?     @map("target_industry")
-  targetCompany  String?     @map("target_company")
-  availableTime  Json?       @map("available_time")
-  createdAt      DateTime    @default(now()) @map("created_at")
-  updatedAt      DateTime    @updatedAt @map("updated_at")
-  
-  // Relations
-  interviewsAsInterviewer Interview[] @relation("InterviewerRelation")
-  interviewsAsInterviewee Interview[] @relation("IntervieweeRelation")
+  id              Int       @id @default(autoincrement())
+  username        String    @unique
+  password        String
+  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  nickname        String?
+  contact_info    String?
+  targetRole      String?   @map("target_role")
+  workExperience  String?   @map("work_experience")
+  practiceAreas   String[]  @default([]) @map("practice_areas")
+  targetIndustry  String?   @map("target_industry")
+  targetCompany   String?   @map("target_company")
+  available_times Json?     @default("{}")
 
   @@map("users")
 }
 
 model Interview {
-  id          String    @id @default(uuid())
-  type        String
-  status      String
-  scheduledAt DateTime? @map("scheduled_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  
-  // Relations
-  interviewer   User   @relation("InterviewerRelation", fields: [interviewerId], references: [id])
-  interviewerId String @map("interviewer_id")
-  
-  interviewee   User   @relation("IntervieweeRelation", fields: [intervieweeId], references: [id])
-  intervieweeId String @map("interviewee_id")
+  id             Int       @id @default(autoincrement())
+  match_id       Int?
+  interviewerId  Int       @map("interviewer_id")
+  intervieweeId  Int       @map("interviewee_id")
+  interview_type String?
+  scheduled_time DateTime? @db.Timestamptz(6)
+  status         String?   @default("scheduled")
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("interviews")
-} 
+}
+
+model matches {
+  id          Int       @id @default(autoincrement())
+  user_id_1   Int
+  user_id_2   Int
+  match_score Float?
+  status      String?   @default("pending")
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model ratings {
+  id            Int       @id @default(autoincrement())
+  interview_id  Int
+  rated_by_id   Int
+  rated_user_id Int
+  rating        Int?
+  feedback      String?
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+}

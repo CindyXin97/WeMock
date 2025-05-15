@@ -1,59 +1,73 @@
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { SignJWT } from 'jose'
+import bcrypt from 'bcryptjs'
 
-// 从 register 中获取用户存储
-// @ts-ignore 开发环境临时方案
-const userStore: Record<string, any> = global.userStore || {};
-// @ts-ignore 开发环境临时方案
-if (!global.userStore) global.userStore = userStore;
+// 标记为动态路由，防止静态生成导致的headers错误
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { username, password } = body
+    const { username, password } = await request.json()
 
-    // 简单示例：仅检查用户名和密码是否为非空
-    if (!username || !password) {
+    // 查找用户
+    const user = await prisma.user.findUnique({
+      where: { username },
+    })
+
+    if (!user) {
       return NextResponse.json(
-        { error: '用户名和密码不能为空' },
-        { status: 400 }
+        { error: '用户名或密码错误' },
+        { status: 401 }
       )
     }
 
-    // 实际项目中，这里应该从数据库查询用户并验证密码
-    // 这里简化为只要提供任何非空用户名和密码就通过
+    // 验证密码
+    const isValid = await bcrypt.compare(password, user.password);
     
-    console.log('User logged in:', { username })
+    if (!isValid) {
+      return NextResponse.json(
+        { error: '用户名或密码错误' },
+        { status: 401 }
+      )
+    }
 
-    // 创建JWT令牌 - 使用jose库
+    // 创建 JWT token
     const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key')
-    const token = await new SignJWT({ userId: '1', username })
+    const token = await new SignJWT({ 
+      id: user.id,
+      username: user.username,
+      nickname: user.nickname
+    })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
-      .setExpirationTime('1d')
+      .setExpirationTime('24h')
       .sign(secret)
 
-    console.log('Token created successfully')
-
-    // 创建响应对象
-    const response = NextResponse.json({ success: true })
-    
-    // 设置cookie到响应中
-    response.cookies.set({
+    // 设置 cookie
+    cookies().set({
       name: 'token',
       value: token,
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24, // 1天
       path: '/',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24, // 24小时
     })
 
-    return response
+    // 返回用户信息（不包括密码）
+    const { password: _, ...userWithoutPassword } = user
+    
+    return NextResponse.json({
+      user: {
+        ...userWithoutPassword,
+        displayName: user.nickname || user.username
+      }
+    })
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(
-      { error: '服务器错误，请稍后重试' },
+      { error: '登录失败，请稍后重试' },
       { status: 500 }
     )
   }

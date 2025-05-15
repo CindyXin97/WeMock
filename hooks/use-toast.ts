@@ -3,24 +3,13 @@
 // Inspired by react-hot-toast library
 import * as React from "react"
 
-// Define types locally to avoid circular dependencies
-export type ToastProps = {
-  id: string
-  title?: React.ReactNode
-  description?: React.ReactNode
-  action?: React.ReactNode
-  variant?: "default" | "destructive"
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
+import type {
+  ToastActionElement,
+  ToastProps,
+} from "@/components/ui/toast"
 
-export type ToastActionElement = React.ReactElement<{
-  altText: string
-  onClick: () => void
-}>
-
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_LIMIT = 5
+const TOAST_REMOVE_DELAY = 5000
 
 type ToasterToast = ToastProps & {
   id: string

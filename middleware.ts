@@ -5,11 +5,16 @@ import { jwtVerify } from 'jose'
 // 需要认证的路由
 const protectedRoutes = ['/profile', '/dashboard', '/matching', '/interviews']
 
+// 标记为动态路由，防止静态生成导致的headers错误
+export const dynamic = 'force-dynamic'
+
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
   
-  // 输出调试信息
-  console.log('Middleware checking path:', path)
+  // 如果是API路由，直接放行
+  if (path.startsWith('/api/')) {
+    return NextResponse.next()
+  }
   
   // 是否需要认证
   const isProtectedRoute = protectedRoutes.some(route => 
@@ -22,14 +27,11 @@ export async function middleware(request: NextRequest) {
   
   // 获取 token
   const token = request.cookies.get('token')?.value
-  console.log('Token found:', !!token)
   
   // 如果没有 token，重定向到登录页
   if (!token) {
-    console.log('No token, redirecting to login')
     const url = new URL('/login', request.url)
     url.searchParams.set('callbackUrl', encodeURIComponent(request.url))
-    console.log('Redirect URL:', url.toString())
     return NextResponse.redirect(url)
   }
   
@@ -38,13 +40,9 @@ export async function middleware(request: NextRequest) {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key')
     const { payload } = await jwtVerify(token, secret)
     
-    console.log('Token verified successfully, decoded payload:', payload)
-    console.log('Token verified, proceeding to protected route')
     return NextResponse.next()
   } catch (error) {
     // token 无效，重定向到登录页
-    console.error('Token verification failed:', error)
-    console.log('Invalid token, redirecting to login')
     const url = new URL('/login', request.url)
     url.searchParams.set('callbackUrl', encodeURIComponent(request.url))
     return NextResponse.redirect(url)
@@ -52,5 +50,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/profile/:path*', '/dashboard/:path*', '/matching/:path*', '/interviews/:path*'],
+  matcher: [
+    '/profile/:path*', 
+    '/dashboard/:path*', 
+    '/matching/:path*', 
+    '/interviews/:path*',
+    '/api/:path*'
+  ],
 } 

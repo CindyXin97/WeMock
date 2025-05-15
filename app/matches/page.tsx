@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { TimePickerDialog } from '@/components/interview/time-picker-dialog'
+import { useToast } from '@/hooks/use-toast'
 
 interface User {
   id: string
@@ -14,6 +15,7 @@ interface User {
   targetIndustry: string
   targetCompany: string
   matchScore?: number
+  displayName?: string
 }
 
 interface Filters {
@@ -23,8 +25,21 @@ interface Filters {
   targetIndustry: string
 }
 
+interface ApiUser {
+  id: string
+  username: string
+  nickname: string | null
+  targetRole: string | null
+  workExperience: string | null
+  practiceAreas: string[]
+  targetIndustry: string | null
+  targetCompany: string | null
+  displayName: string
+}
+
 export default function MatchesPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<Filters>({
@@ -42,9 +57,10 @@ export default function MatchesPage() {
         const response = await fetch('/api/matches')
         if (response.ok) {
           const data = await response.json()
-          const usersWithScores = data.map((user: User) => ({
+          const usersWithScores = data.map((user: ApiUser) => ({
             ...user,
-            matchScore: calculateMatchScore(user, filters)
+            name: user.displayName || user.username,
+            matchScore: calculateMatchScore(user as unknown as User, filters)
           }))
           setUsers(usersWithScores.sort((a: User, b: User) => (b.matchScore || 0) - (a.matchScore || 0)))
         }
@@ -102,11 +118,25 @@ export default function MatchesPage() {
           suggestedTime: time,
         }),
       })
+
+      const data = await response.json()
+      
       if (response.ok) {
-        alert('面试请求已发送！')
+        toast({
+          title: '成功',
+          description: data.message || '面试请求已发送！',
+          variant: 'default',
+        })
+      } else {
+        throw new Error(data.error || '发送面试请求失败')
       }
     } catch (error) {
       console.error('Error requesting interview:', error)
+      toast({
+        title: '请求失败',
+        description: error instanceof Error ? error.message : '发送面试请求失败，请重试',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -184,14 +214,14 @@ export default function MatchesPage() {
 
       {/* 匹配列表 */}
       <div className="space-y-4">
-        {users.map((user) => (
+        {users.map((user: User) => (
           <div key={user.id} className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-semibold">{user.name}</h3>
                 <p className="text-gray-600">{user.targetRole} | {user.workExperience}年经验</p>
                 <div className="mt-2">
-                  {user.practiceAreas.map((area) => (
+                  {user.practiceAreas.map((area: string) => (
                     <span
                       key={area}
                       className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm mr-2 mb-2"
