@@ -46,7 +46,7 @@ export default async function InterviewListPage() {
 
     // 获取所有用户以便查找面试官和候选人信息
     const userIdSet = new Set<number>()
-    interviews.forEach(interview => {
+    interviews.forEach((interview: Interview) => {
       userIdSet.add(interview.interviewerId)
       userIdSet.add(interview.intervieweeId)
     })
@@ -62,7 +62,7 @@ export default async function InterviewListPage() {
 
     // 创建用户ID到用户信息的映射
     const userMap = new Map<number, User>()
-    users.forEach(user => {
+    users.forEach((user: User) => {
       userMap.set(user.id, user)
     })
 
