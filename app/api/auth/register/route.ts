@@ -1,79 +1,57 @@
 import { NextResponse } from 'next/server'
-import { hash } from 'bcryptjs'
-import { query, withTransaction } from '@/lib/database'
+import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
-export async function POST(req: Request) {
+// 标记为动态路由，防止静态生成导致的headers错误
+export const dynamic = 'force-dynamic';
+
+export async function POST(request: Request) {
   try {
-    const { 
-      username, 
-      password, 
-      nickname 
-    } = await req.json()
+    const { username, password, nickname } = await request.json()
 
-    // 验证必填字段
+    // 验证输入
     if (!username || !password) {
       return NextResponse.json(
-        { error: '请填写用户名和密码' },
-        { status: 400 }
-      )
-    }
-
-    // 验证密码长度
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: '密码长度至少为6个字符' },
+        { error: '用户名和密码不能为空' },
         { status: 400 }
       )
     }
 
     // 检查用户名是否已存在
-    const existingUsers = await query<{ id: number }>(
-      'SELECT id FROM users WHERE username = $1',
-      [username]
-    )
+    const existingUser = await prisma.user.findUnique({
+      where: { username },
+    })
 
-    if (existingUsers.length > 0) {
+    if (existingUser) {
       return NextResponse.json(
-        { error: '用户名已被占用' },
-        { status: 400 }
+        { error: '用户名已存在' },
+        { status: 409 }
       )
     }
 
-    // 对密码进行加密
-    const hashedPassword = await hash(password, 10)
+    // 哈希密码
+    const hashedPassword = await bcrypt.hash(password, 10)
 
-    // 创建用户 - 使用事务确保数据完整性
-    const result = await withTransaction(async (client) => {
-      const insertResult = await client.query(
-        `INSERT INTO users (
-          username, 
-          password, 
-          nickname
-        )
-        VALUES ($1, $2, $3)
-        RETURNING id, username`,
-        [
-          username, 
-          hashedPassword, 
-          nickname || null
-        ]
-      )
-      
-      return insertResult.rows[0]
+    // 创建新用户
+    const newUser = await prisma.user.create({
+      data: {
+        username,
+        password: hashedPassword,
+        nickname: nickname || null,
+        practiceAreas: [],
+        available_times: {}
+      },
     })
 
-    console.log('User registered:', { username })
-
-    return NextResponse.json(
-      { 
-        message: '注册成功', 
-        user: { 
-          id: result.id, 
-          username: result.username 
-        } 
-      },
-      { status: 201 }
-    )
+    // 返回用户信息（不包括密码）
+    const { password: _, ...userWithoutPassword } = newUser
+    
+    return NextResponse.json({
+      user: {
+        ...userWithoutPassword,
+        displayName: newUser.nickname || newUser.username
+      }
+    })
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json(

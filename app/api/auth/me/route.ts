@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
-import { verify } from 'jsonwebtoken'
-import { query } from '@/lib/database'
+import { jwtVerify } from 'jose'
+import { prisma } from '@/lib/prisma'
+
+// 标记为动态路由，防止静态生成导致的headers错误
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
@@ -25,25 +28,28 @@ export async function GET(req: Request) {
     const token = tokenCookie.split('=')[1]
     
     // 验证 token
-    const decoded = verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: number, username: string }
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key')
+    const { payload } = await jwtVerify(token, secret)
+    const userId = payload.id as number
     
-    // 查询用户信息 - 使用参数化查询防SQL注入
-    const users = await query<any>(
-      `SELECT 
-        id, username, 
-        contact_info as "contactInfo",
-        target_role as "targetRole", 
-        work_experience as "workExperience", 
-        practice_areas as "practiceAreas", 
-        target_industry as "targetIndustry", 
-        target_company as "targetCompany",
-        available_times as "availableTimes"
-      FROM users 
-      WHERE id = $1`,
-      [decoded.userId]
-    )
+    // 查询用户信息
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        nickname: true,
+        contact_info: true,
+        targetRole: true,
+        workExperience: true,
+        practiceAreas: true,
+        targetIndustry: true,
+        targetCompany: true,
+        available_times: true,
+      }
+    })
     
-    if (users.length === 0) {
+    if (!user) {
       return NextResponse.json(
         { error: '用户不存在' },
         { status: 404 }
@@ -52,7 +58,11 @@ export async function GET(req: Request) {
     
     // 返回用户信息
     return NextResponse.json({
-      user: users[0]
+      user: {
+        ...user,
+        contactInfo: user.contact_info,
+        displayName: user.nickname || user.username
+      }
     })
   } catch (error) {
     console.error('Auth check error:', error)

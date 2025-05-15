@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { verify } from 'jsonwebtoken'
 import { query, withTransaction } from '@/lib/database'
 
+// 标记为动态路由，防止静态生成导致的headers错误
+export const dynamic = 'force-dynamic';
+
 export async function PUT(req: Request) {
   try {
     // 获取 cookie 中的 token

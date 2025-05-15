@@ -17,7 +17,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { Menu, User, LogOut } from 'lucide-react'
+import { Menu, User, LogOut, ToggleLeft } from 'lucide-react'
 
 type User = {
   username: string;
@@ -161,6 +161,8 @@ export function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                 
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     onClick={handleLogout}
                     className="cursor-pointer text-red-600 focus:text-red-600"
@@ -183,6 +185,11 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent side="right" className="pr-0">
               <div className="flex flex-col gap-4 px-2">
+                {/* 开发工具区域 - 始终显示 */}
+                <div className="border-b pb-2 mb-2">
+                  <p className="text-xs text-muted-foreground mb-2">开发工具</p>
+                </div>
+
                 {isLoading ? (
                   // 加载状态
                   <div className="flex items-center justify-center py-8">

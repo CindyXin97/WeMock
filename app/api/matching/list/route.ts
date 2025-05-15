@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
+// 标记为动态路由，防止静态生成导致的headers错误
+export const dynamic = 'force-dynamic';
+
 // Define user type for better type safety
 type User = {
   id: number;

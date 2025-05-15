@@ -5,7 +5,7 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
-  // 禁用特定页面的静态生成
+  // 配置输出模式
   output: 'standalone',
 };
 

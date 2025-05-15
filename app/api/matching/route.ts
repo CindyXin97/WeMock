@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { verify } from 'jsonwebtoken'
 import { query } from '@/lib/database'
 
+// 标记为动态路由，防止静态生成导致的headers错误
+export const dynamic = 'force-dynamic';
+
 // 定义用户类型
 interface User {
   id: number;
